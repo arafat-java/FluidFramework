@@ -13,7 +13,9 @@ export {
 } from "./assert.js";
 export { compareArrays } from "./compare.js";
 export { delay } from "./delay.js";
-export { debounce } from "./debounce.js";
+export { debounce, debounceSimple, type DebounceOptions, type DebouncedFunction } from "./debounce.js";
+export { throttle, type ThrottleOptions, type ThrottledFunction } from "./throttle.js";
+export { once, onceAsync } from "./once.js";
 export type { IComparer, IHeapNode } from "./heap.js";
 export { Heap, NumberComparer } from "./heap.js";
 export { Lazy, LazyPromise } from "./lazy.js";
