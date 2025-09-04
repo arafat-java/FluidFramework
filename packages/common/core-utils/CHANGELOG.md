@@ -1,5 +1,52 @@
 # @fluidframework/core-utils
 
+## 2.61.0
+
+### Minor Changes
+
+- Enhanced `debounce` utility function with advanced options and control methods ([#PR_NUMBER](https://github.com/microsoft/FluidFramework/pull/PR_NUMBER))
+
+  The `debounce` function has been enhanced with advanced configuration options including leading/trailing edge execution, maxWait, and control methods (cancel, flush, pending).
+
+  ```ts
+  import { debounce } from "@fluidframework/core-utils";
+
+  const debouncedSearch = debounce((query: string) => {
+    performSearch(query);
+  }, 300, { leading: true, trailing: true, maxWait: 1000 });
+
+  // Control methods
+  debouncedSearch("query");
+  debouncedSearch.cancel(); // Cancel pending execution
+  debouncedSearch.flush();  // Execute immediately if pending
+  console.log(debouncedSearch.pending); // Check if pending
+  ```
+
+- New `throttle` utility function ([#PR_NUMBER](https://github.com/microsoft/FluidFramework/pull/PR_NUMBER))
+
+  A new `@internal` utility function `throttle` has been added to limit the rate at which functions can be called.
+
+  ```ts
+  import { throttle } from "@fluidframework/core-utils";
+
+  const throttledScroll = throttle(() => {
+    updateScrollPosition();
+  }, 100, { leading: true, trailing: true });
+  ```
+
+- New `once` and `onceAsync` utility functions ([#PR_NUMBER](https://github.com/microsoft/FluidFramework/pull/PR_NUMBER))
+
+  Two new `@internal` utility functions have been added:
+  - `once`: Creates a function that can only be called once, caching the result
+  - `onceAsync`: Creates an async function that can only be called once, caching the promise result
+
+  ```ts
+  import { once, onceAsync } from "@fluidframework/core-utils";
+
+  const expensiveOp = once(() => heavyComputation());
+  const apiCall = onceAsync(async () => fetch('/api/data'));
+  ```
+
 ## 2.60.0
 
 Dependency updates only.

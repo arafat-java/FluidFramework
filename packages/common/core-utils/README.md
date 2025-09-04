@@ -47,6 +47,19 @@ As a utility package, this package does not have a strong identity. This means t
 ground" for code that we think we should share but doesn't have an obvious home. We try to avoid dumping things into
 utility packages, and this one is no exception.
 
+## Available Utilities
+
+This package provides several utility functions:
+
+- **debounce**: Creates a debounced function that delays invoking the provided function until after a specified delay has elapsed since the last time it was invoked.
+- **delay**: Returns a promise that resolves after a specified time.
+- **assert**: Provides assertion utilities for development and testing.
+- **compareArrays**: Compares arrays for equality.
+- **Heap**: Implements a heap data structure.
+- **Timer**: Provides timer functionality for promises.
+
+For a complete list of available utilities, see the source code or generated API documentation.
+
 New code should only be added to this package in rare circumstances. In most cases, the code would be better placed in a
 package with a clear identity (e.g. an "events" package for shared event infrastructure) or not shared at all.
 
