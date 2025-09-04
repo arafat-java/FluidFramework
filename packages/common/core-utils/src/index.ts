@@ -13,6 +13,7 @@ export {
 } from "./assert.js";
 export { compareArrays } from "./compare.js";
 export { delay } from "./delay.js";
+export { debounce } from "./debounce.js";
 export type { IComparer, IHeapNode } from "./heap.js";
 export { Heap, NumberComparer } from "./heap.js";
 export { Lazy, LazyPromise } from "./lazy.js";

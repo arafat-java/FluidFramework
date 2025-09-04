@@ -1,5 +1,27 @@
 # @fluidframework/core-utils
 
+## 2.61.0
+
+### Minor Changes
+
+- New `debounce` utility function ([#PR_NUMBER](https://github.com/microsoft/FluidFramework/pull/PR_NUMBER))
+
+  A new `@internal` utility function `debounce` has been added to create debounced versions of functions that delay invocation until after a specified delay has elapsed since the last call.
+
+  ```ts
+  import { debounce } from "@fluidframework/core-utils";
+
+  const debouncedSearch = debounce((query: string) => {
+    // This will only execute after 300ms of no calls
+    performSearch(query);
+  }, 300);
+
+  // Multiple rapid calls will only result in one execution
+  debouncedSearch("a");
+  debouncedSearch("ab");
+  debouncedSearch("abc"); // Only this call will execute
+  ```
+
 ## 2.60.0
 
 Dependency updates only.
