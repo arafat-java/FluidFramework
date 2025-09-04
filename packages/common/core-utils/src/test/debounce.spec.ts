@@ -209,3 +209,135 @@ describe("debounceSimple (deprecated)", () => {
 		}, 100);
 	});
 });
+
+// Additional tests appended by PR tooling — broaden coverage for edge cases and behavior guarantees.
+describe("debounce - additional coverage", () => {
+	it("should use the latest arguments when multiple calls occur before the delay (trailing call)", (done) => {
+		let received: any;
+		const debouncedFn = debounce((v: any) => {
+			received = v;
+		}, 60);
+
+		debouncedFn("first");
+		setTimeout(() => debouncedFn("second"), 10);
+		setTimeout(() => debouncedFn("third"), 20);
+
+		setTimeout(() => {
+			assert.strictEqual(received, "third");
+			done();
+		}, 120);
+	});
+
+	it("should preserve the 'this' context when called as a method", (done) => {
+		let observed: any;
+		const obj = {
+			value: 42,
+			method: debounce(function (this: any) {
+				observed = this.value;
+			}, 40),
+		};
+
+		obj.method();
+
+		setTimeout(() => {
+			assert.strictEqual(observed, 42);
+			done();
+		}, 90);
+	});
+
+	it("flush() should execute with the most recent arguments", (done) => {
+		let received: any;
+		const debouncedFn = debounce((v: any) => {
+			received = v;
+		}, 100);
+
+		debouncedFn("a");
+		setTimeout(() => {
+			debouncedFn("b");
+			// Flushing shortly after updating args should run with "b"
+			debouncedFn.flush();
+			assert.strictEqual(received, "b");
+		}, 40);
+
+		// Ensure no additional trailing execution happens after flush
+		setTimeout(() => {
+			assert.strictEqual(received, "b");
+			done();
+		}, 180);
+	});
+
+	it("cancel() after a leading call should prevent a trailing call when trailing is enabled", (done) => {
+		let callCount = 0;
+		const debouncedFn = debounce(() => {
+			callCount++;
+		}, 80, { leading: true, trailing: true });
+
+		// Immediate leading edge
+		debouncedFn();
+		assert.strictEqual(callCount, 1);
+
+		// Schedule a trailing call, then cancel before delay elapses
+		setTimeout(() => {
+			debouncedFn();
+			debouncedFn.cancel();
+		}, 10);
+
+		setTimeout(() => {
+			assert.strictEqual(callCount, 1, "trailing call should be cancelled");
+			done();
+		}, 150);
+	});
+
+	it("pending should remain false when using leading-only execution (no trailing)", (done) => {
+		const debouncedFn = debounce(() => {}, 70, { leading: true, trailing: false });
+
+		assert.strictEqual(debouncedFn.pending, false, "initial pending should be false");
+		debouncedFn(); // executes immediately
+		assert.strictEqual(debouncedFn.pending, false, "should not be pending after immediate leading execution");
+
+		// Subsequent rapid calls within the window should not queue a trailing call
+		debouncedFn();
+		debouncedFn();
+
+		setTimeout(() => {
+			assert.strictEqual(debouncedFn.pending, false, "still not pending after the window");
+			done();
+		}, 120);
+	});
+});
+
+describe("debounceSimple (deprecated) - additional coverage", () => {
+	it("should pass through the latest arguments after rapid successive calls", (done) => {
+		let received: any[] | undefined;
+		const debouncedFn = debounceSimple((...args: any[]) => {
+			received = args;
+		}, 50);
+
+		debouncedFn("x", 1);
+		setTimeout(() => debouncedFn("y", 2), 10);
+		setTimeout(() => debouncedFn("z", 3), 20);
+
+		setTimeout(() => {
+			assert.deepStrictEqual(received, ["z", 3]);
+			done();
+		}, 110);
+	});
+
+	it("should handle zero delay by deferring to the next tick and coalescing calls", (done) => {
+		let count = 0;
+		let last: any;
+		const debouncedFn = debounceSimple((v: any) => {
+			count++;
+			last = v;
+		}, 0);
+
+		debouncedFn("a");
+		debouncedFn("b");
+
+		setTimeout(() => {
+			assert.strictEqual(count, 1);
+			assert.strictEqual(last, "b");
+			done();
+		}, 10);
+	});
+});
