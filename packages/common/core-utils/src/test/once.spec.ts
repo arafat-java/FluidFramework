@@ -192,3 +192,78 @@ describe("onceAsync", () => {
 		assert.strictEqual(result2, undefined);
 	});
 });
+it("should defer execution until first invocation (lazy evaluation)", () => {
+  let executed = false;
+  const wrapped = once(() => { executed = true; return 7; });
+  assert.strictEqual(executed, false); // wrapping should not execute
+  const r1 = wrapped();
+  assert.strictEqual(executed, true);
+  const r2 = wrapped();
+  assert.strictEqual(r1, 7);
+  assert.strictEqual(r2, 7);
+});
+it("should ignore later call arguments and contexts after the first result is cached", () => {
+  const fn = function(this: any, a: number, b: number) { return { sum: a + b, ctx: this && this.name }; };
+  const o1 = { name: "first" }; const o2 = { name: "second" };
+  const wrapped = once(fn.bind(o1));
+  const first = wrapped(2, 5);
+  const second = wrapped.call(o2 as any, 100, 200);
+  assert.deepStrictEqual(first, { sum: 7, ctx: "first" });
+  assert.deepStrictEqual(second, { sum: 7, ctx: "first" });
+});
+it("should call only once even if the function throws, and rethrow the same error thereafter", () => {
+  let callCount = 0;
+  const err = new Error("boom");
+  const wrapped = once(() => { callCount++; throw err; });
+  for (let i = 0; i < 2; i++) {
+    try { wrapped(); assert.fail("Expected error to be thrown"); } catch (e) { assert.strictEqual(e, err); }
+  }
+  assert.strictEqual(callCount, 1);
+});
+it("should cache undefined results distinctly (not re-execute to try for a value)", () => {
+  let calls = 0;
+  const wrapped = once(() => { calls++; return undefined; });
+  const a = wrapped(); const b = wrapped();
+  assert.strictEqual(a, undefined);
+  assert.strictEqual(b, undefined);
+  assert.strictEqual(calls, 1);
+});
+it("should preserve this binding for onceAsync-wrapped methods", async () => {
+  const obj = { value: 0, inc: onceAsync(async function(this: any, by: number) { await new Promise(r => setTimeout(r, 5)); this.value += by; return this.value; }) };
+  const p1 = obj.inc(3);
+  const p2 = obj.inc(10); // same promise as p1
+  assert.strictEqual(p1, p2);
+  const r1 = await p1; const r2 = await p2;
+  assert.strictEqual(r1, 3);
+  assert.strictEqual(r2, 3);
+  assert.strictEqual(obj.value, 3);
+});
+it("should not re-execute async function after a rejection; subsequent calls see same rejection", async () => {
+  let calls = 0;
+  const err = new Error("async-fail");
+  const wrapped = onceAsync(async () => { calls++; await new Promise(r => setTimeout(r, 5)); throw err; });
+  const p1 = wrapped(); const p2 = wrapped();
+  assert.strictEqual(p1, p2);
+  await assert.rejects(p1, /async-fail/);
+  await assert.rejects(p2, /async-fail/);
+  assert.strictEqual(calls, 1);
+});
+it("should cache resolved undefined values in onceAsync", async () => {
+  let calls = 0;
+  const wrapped = onceAsync(async () => { calls++; await new Promise(r => setTimeout(r, 3)); return undefined; });
+  const a = await wrapped(); const b = await wrapped();
+  assert.strictEqual(a, undefined);
+  assert.strictEqual(b, undefined);
+  assert.strictEqual(calls, 1);
+});
+it("should support call/apply and still execute only once", () => {
+  let count = 0;
+  function add(this: any, a: number, b: number) { count++; return a + b + (this && this.delta || 0); }
+  const wrapped = once(add);
+  const ctx1 = { delta: 1 }, ctx2 = { delta: 100 };
+  const r1 = wrapped.call(ctx1 as any, 2, 3);
+  const r2 = wrapped.apply(ctx2 as any, [10, 20]);
+  assert.strictEqual(r1, 6);
+  assert.strictEqual(r2, 6);
+  assert.strictEqual(count, 1);
+});
